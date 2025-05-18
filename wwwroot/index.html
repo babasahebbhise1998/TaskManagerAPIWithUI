@@ -1,0 +1,158 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Task Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #taskList {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container vh-100 d-flex justify-content-center align-items-center">
+        <div class="row w-100">
+            <div class="row justify-content-center">
+                <div class="card shadow p-4">
+                    <h2 class="mb-4 text-center">Task Manager</h2>
+
+                    <form id="taskForm" class="mb-4">
+                        <input type="hidden" id="taskId" />
+                        <input type="text" class="form-control mb-2" id="title" placeholder="Task title" required />
+                        <input type="text" class="form-control mb-2" id="description" placeholder="Description" />
+                        <input type="date" class="form-control mb-2" id="dueDate" />
+                        <div class="d-flex justify-content-between">
+                            <button class="btn btn-primary" type="submit" id="submitBtn">Add Task</button>
+                            <button class="btn btn-secondary d-none" type="button" id="cancelBtn">Cancel Edit</button>
+                        </div>
+                    </form>
+
+                    <h4 class="text-center">Tasks</h4>
+                    <ul id="taskList" class="list-group"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const apiUrl = 'https://localhost:7138/api/taskmanager';
+
+        document.getElementById('taskForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const taskId = document.getElementById('taskId').value;
+            const task = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                dueDate: document.getElementById('dueDate').value || null,
+                isComplete: false
+            };
+
+            if (taskId) {
+                const res = await fetch(`${apiUrl}/${taskId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(task)
+                });
+
+                if (res.ok) {
+                    resetForm();
+                    loadTasks();
+                } else {
+                    const err = await res.json();
+                    alert("Error: " + err.message);
+                }
+            } else {
+                const res = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(task)
+                });
+
+                if (res.ok) {
+                    resetForm();
+                    loadTasks();
+                } else {
+                    const err = await res.json();
+                    alert("Error: " + err.message);
+                }
+            }
+        });
+
+        function resetForm() {
+            document.getElementById('taskForm').reset();
+            document.getElementById('taskId').value = '';
+            document.getElementById('submitBtn').innerText = 'Add Task';
+            document.getElementById('cancelBtn').classList.add('d-none');
+        }
+
+        document.getElementById('cancelBtn').addEventListener('click', resetForm);
+
+        async function loadTasks() {
+            const res = await fetch(apiUrl);
+            const tasks = await res.json();
+
+            const list = document.getElementById('taskList');
+            list.innerHTML = '';
+
+            tasks.forEach(task => {
+                const text = task.isComplete ? `<s>${task.title}</s>` : task.title;
+
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                li.innerHTML = `
+                        <div>
+                            <strong>${text}</strong>
+                            <div class="text-muted small">${task.description || ''}</div>
+                            <div class="text-muted small">${task.dueDate ? 'Due: ' + task.dueDate.split('T')[0] : ''}</div>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-success me-1" onclick="toggleComplete(${task.id}, ${!task.isComplete})">
+                                ${task.isComplete ? 'Undo' : 'Complete'}
+                            </button>
+                            <button class="btn btn-sm btn-info me-1" onclick="editTask(${task.id})">Edit</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteTask(${task.id})">Delete</button>
+                        </div>
+                    `;
+                list.appendChild(li);
+            });
+        }
+
+        async function toggleComplete(id, isComplete) {
+            const res = await fetch(`${apiUrl}/${id}`);
+            const task = await res.json();
+            task.isComplete = isComplete;
+
+            await fetch(`${apiUrl}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(task)
+            });
+
+            loadTasks();
+        }
+
+        async function deleteTask(id) {
+            await fetch(`${apiUrl}/${id}`, { method: 'DELETE' });
+            loadTasks();
+        }
+
+        async function editTask(id) {
+            const res = await fetch(`${apiUrl}/${id}`);
+            const task = await res.json();
+
+            document.getElementById('taskId').value = task.id;
+            document.getElementById('title').value = task.title;
+            document.getElementById('description').value = task.description;
+            document.getElementById('dueDate').value = task.dueDate ? task.dueDate.split('T')[0] : '';
+
+            document.getElementById('submitBtn').innerText = 'Update Task';
+            document.getElementById('cancelBtn').classList.remove('d-none');
+        }
+
+        loadTasks();
+    </script>
+</body>
+</html>
