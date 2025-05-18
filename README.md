@@ -4,7 +4,7 @@ NET Developer Hiring Challenge
 # Task Manager Application
 
 A simple web-based Task Manager that allows you to add, edit, complete, and delete tasks.  
-This frontend is a standalone HTML page that interacts with a backend REST API at `https://localhost:7180/api/tasks`.
+This frontend is a standalone HTML page that interacts with a backend REST API at `https://localhost:7138/api/taskmanager`.
 
 ---
 
@@ -62,7 +62,7 @@ This frontend is a standalone HTML page that interacts with a backend REST API a
   - No user authentication or authorization implemented.
   - Due dates are handled as ISO strings but displayed as simple date.
   - No offline or local storage,
-  - The frontend expects backend at a fixed URL (`https://localhost:7180/api/tasks`).
+  - The frontend expects backend at a fixed URL (`https://localhost:7138/api/taskmanager`).
 
 ---
 
