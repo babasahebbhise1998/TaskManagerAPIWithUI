@@ -40,6 +40,7 @@ namespace TaskMangerWebAPI.Services
         /// <returns>The added task item with its assigned ID.</returns>
         public async Task<TaskItem> AddAsync(TaskItem task)
         {
+            task.Id = _context.Tasks.Any() ? _context.Tasks.Max(t =>t.Id) + 1 : 1;
             _context.Tasks.Add(task);
             await _context.SaveChangesAsync();
             return task;
